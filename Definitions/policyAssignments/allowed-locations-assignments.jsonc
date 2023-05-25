@@ -1,0 +1,39 @@
+{
+    "nodeName": "/Loc/",
+    "assignment": {
+        "name": "allowed-locations",
+        "displayName": "Allowed Locations",
+        "description": "Sets the allowed locations"
+    },
+    "definitionEntry": {
+        "policySetName": "general-allowed-locations-policy-set",
+    },
+    "parameters": {
+        "AllowedLocations": [
+            "eastus2"
+        ]
+    },
+    "scope": {
+        "PolicyAsCode-dev": [
+            "/providers/Microsoft.Management/managementGroups/PolicyAsCode-dev"
+        ],
+        "platform": [
+            "/providers/Microsoft.Management/managementGroups/platform"
+        ],
+        "dev": [
+            "/providers/Microsoft.Management/managementGroups/dev"
+        ],
+        "nonprod": [
+            "/providers/Microsoft.Management/managementGroups/nonprod"
+        ],
+        "prod": [
+            "/providers/Microsoft.Management/managementGroups/prod"
+        ],
+        "FedRAMP": [
+            "/providers/Microsoft.Management/managementGroups/FedRAMP"
+        ],
+        "nist": [
+            "/providers/Microsoft.Management/managementGroups/nist"
+        ]
+    }
+}
