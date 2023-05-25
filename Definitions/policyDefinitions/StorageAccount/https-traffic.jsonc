@@ -1,5 +1,5 @@
 {
-    "name": "stg-https-traffic",
+    "name": "stg-https-traffic", //suppose to be a GUID
     "properties": {
         "mode": "All",
         "policyType": "Custom",
