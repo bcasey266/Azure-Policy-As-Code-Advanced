@@ -1,0 +1,74 @@
+{
+    "nodeName": "/stghttp/",
+    "parameters": {
+        "excludedRG": [
+            "synapseworkspace-managedrg-*",
+            "databricks-rg-*",
+            "managed*",
+            "DefaultResourceGroup*",
+            "NetworkWatcherRG*",
+            "LogAnalyticsDefaultR*",
+            "Orca-Security*",
+            "rg-terraform*",
+            "cloud-shell-storage*"
+        ]
+    },
+    "children": [
+        {
+            "nodeName": "deny/",
+            "parameters": {
+                "effect": "deny"
+            },
+            "scope": {
+                "PolicyAsCode-dev": [
+                    "/providers/Microsoft.Management/managementGroups/PolicyAsCode-dev"
+                ],
+                "platform": [
+                    "/providers/Microsoft.Management/managementGroups/platform"
+                ],
+                "dev": [
+                    "/providers/Microsoft.Management/managementGroups/dev"
+                ],
+                "nonprod": [
+                    "/providers/Microsoft.Management/managementGroups/nonprod"
+                ],
+                "prod": [
+                    "/providers/Microsoft.Management/managementGroups/prod"
+                ],
+                "FedRAMP": [
+                    "/providers/Microsoft.Management/managementGroups/FedRAMP"
+                ],
+                "nist": [
+                    "/providers/Microsoft.Management/managementGroups/nist"
+                ]
+            },
+            "definitionEntry": {
+                "policyName": "stg-https-traffic"
+            },
+            "assignment": {
+                "name": "stg-deny-http",
+                "displayName": "Storage Account Force HTTPS Only",
+                "description": "Denies the creation of HTTP enabled Storage Accounts"
+            }
+        },
+        {
+            "nodeName": "audit/",
+            "parameters": {
+                "effect": "audit"
+            },
+            "scope": {
+                "Sandbox": [
+                    "/providers/Microsoft.Management/managementGroups/sandbox"
+                ]
+            },
+            "definitionEntry": {
+                "policyName": "stg-https-traffic"
+            },
+            "assignment": {
+                "name": "stg-audit-http",
+                "displayName": "Storage Account Audit HTTPS",
+                "description": "Audits the creation of HTTP enabled Storage Accounts"
+            }
+        }
+    ]
+}

@@ -1,0 +1,109 @@
+name: Feature Branch Deployment
+on:
+  # Triggers the workflow on push to all branches except main
+  push:
+    branches-ignore:
+      - "main"
+
+jobs:
+  Policy:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    concurrency:
+      group: FeatureBranchDeploy
+      cancel-in-progress: true
+
+    # Sets the GitHub Environment that it will run against
+    environment: PolicyAsCode-dev
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - shell: pwsh
+        name: Install Required Modules
+        run: |
+          Install-Module Az.ResourceGraph -Force -AllowClobber
+          Install-Module Az.Resources -Force -AllowClobber
+          Install-Module EnterprisePolicyAsCode -Force
+
+      # Validates that assignments are compatible
+      #- name: Validate Assignments
+      #  shell: pwsh
+      #  run: .\Scripts\Validate.ps1
+
+      # Logs into Azure using the GitHub Secret "AZPOLICY_PLAN"
+      - uses: Azure/login@v1
+        with:
+          client-id: ${{ secrets.PLAN_CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          allow-no-subscriptions: true
+          enable-AzPSSession: true
+
+      # Plan the policies
+      - name: Plan Policies
+        uses: azure/powershell@v1
+        with:
+          inlineScript: |
+            .\Scripts\Deploy\Build-DeploymentPlans.ps1 -PacEnvironmentSelector PolicyAsCode-dev
+            .\Scripts\Deploy\Build-DeploymentPlans.ps1 -PacEnvironmentSelector Sandbox
+          azPSVersion: "latest"
+
+      # Log out of Plan SPN
+      - name: Log Out
+        run: |
+          az logout
+          az cache purge
+          az account clear
+
+      # Logs into Azure using the GitHub Secret "AZPOLICY_DEPLOY"
+      - uses: Azure/login@v1
+        with:
+          client-id: ${{ secrets.DEPLOY_CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          allow-no-subscriptions: true
+          enable-AzPSSession: true
+
+      # Deploy the policies
+      - name: Deploy Policies
+        uses: azure/powershell@v1
+        with:
+          inlineScript: |
+            .\Scripts\Deploy\Deploy-PolicyPlan.ps1 -PacEnvironmentSelector PolicyAsCode-dev
+            .\Scripts\Deploy\Deploy-RolesPlan.ps1 -PacEnvironmentSelector Sandbox
+          azPSVersion: "latest"
+
+      # Log out of Deploy SPN
+      - name: Log Out
+        run: |
+          az logout
+          az cache purge
+          az account clear
+
+      # Logs into Azure using the GitHub Secret "AZPOLICY_ROLES"
+      - uses: Azure/login@v1
+        with:
+          client-id: ${{ secrets.ROLES_CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          allow-no-subscriptions: true
+          enable-AzPSSession: true
+
+      # Deploy Role Assignments
+      - name: Deploy Role Assignments
+        uses: azure/powershell@v1
+        with:
+          inlineScript: |
+            .\Scripts\Deploy\Deploy-RolesPlan.ps1 -PacEnvironmentSelector PolicyAsCode-dev
+            .\Scripts\Deploy\Deploy-RolesPlan.ps1 -PacEnvironmentSelector Sandbox
+          azPSVersion: "latest"
+
+      # Uploads the Plan results to GitHub
+      - name: Upload Policy Results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test-Results
+          path: |
+            Output

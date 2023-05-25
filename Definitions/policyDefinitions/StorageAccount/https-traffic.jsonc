@@ -1,0 +1,87 @@
+{
+    "name": "stg-https-traffic",
+    "properties": {
+        "mode": "All",
+        "policyType": "Custom",
+        "displayName": "Ensure https traffic only for storage account",
+        "description": "Ensure https traffic only for storage account",
+        "metadata": {
+            "version": "1.0.0",
+            "category": "Storage Account"
+        },
+        "parameters": {
+            "effect": {
+                "type": "String",
+                "metadata": {
+                    "displayName": "Policy Effect",
+                    "description": "Effect the Policy uses if non-compliance is detected"
+                },
+                "defaultValue": "audit",
+                "allowedValues": [
+                    "audit",
+                    "deny"
+                ]
+            },
+            "excludedRG": {
+                "type": "Array",
+                "metadata": {
+                    "displayName": "Excluded Resource Groups",
+                    "description": "This array contains all excluded RGs from this policy"
+                },
+                "defaultValue": [
+                    "synapseworkspace-managedrg-*",
+                    "databricks*",
+                    "managed-rg-*",
+                    "LogAnalyticsDefaultR*",
+                    "DefaultResourceGroup*",
+                    "NetworkWatcherRG*",
+                    "Orca-Security*"
+                ]
+            }
+        },
+        "policyRule": {
+            "if": {
+                "allOf": [
+                    {
+                        "field": "type",
+                        "equals": "Microsoft.Storage/storageAccounts"
+                    },
+                    {
+                        "anyOf": [
+                            {
+                                "allOf": [
+                                    {
+                                        "value": "[requestContext().apiVersion]",
+                                        "less": "2019-04-01"
+                                    },
+                                    {
+                                        "field": "Microsoft.Storage/storageAccounts/supportsHttpsTrafficOnly",
+                                        "exists": "false"
+                                    }
+                                ]
+                            },
+                            {
+                                "field": "Microsoft.Storage/storageAccounts/supportsHttpsTrafficOnly",
+                                "equals": "false"
+                            }
+                        ]
+                    },
+                    {
+                        "count": {
+                            "value": "[parameters('excludedRG')]",
+                            "name": "excludedRG",
+                            "where": {
+                                "value": "[resourceGroup().name]",
+                                "like": "[current('excludedRG')]"
+                            }
+                        },
+                        "equals": 0
+                    }
+                ]
+            },
+            "then": {
+                "effect": "[parameters('effect')]"
+            }
+        }
+    }
+}
